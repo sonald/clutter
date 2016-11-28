@@ -129,6 +129,7 @@ struct _ClutterStagePrivate
   ClutterPlane current_clip_planes[4];
 
   GList *pending_queue_redraws;
+  GList *always_redraw_actors;
 
   CoglFramebuffer *active_framebuffer;
 
@@ -1335,6 +1336,47 @@ clutter_stage_get_redraw_clip_bounds (ClutterStage          *stage,
     }
 }
 
+void
+clutter_stage_add_always_redraw_clip (ClutterStage         *stage,
+                                     cairo_rectangle_int_t *clip)
+{
+  ClutterStageWindow *stage_window;
+
+  stage_window = _clutter_stage_get_window (stage);
+  if (stage_window == NULL)
+    return;
+
+  _clutter_stage_window_add_redraw_clip (stage_window, clip);
+}
+
+void
+clutter_stage_add_always_redraw_actor (ClutterStage          *stage,
+                                       ClutterActor          *actor)
+{
+  ClutterStagePrivate *priv;
+
+  g_return_if_fail (CLUTTER_IS_STAGE (stage));
+  g_return_if_fail (CLUTTER_IS_ACTOR (actor));
+
+  priv = stage->priv;
+
+  priv->always_redraw_actors = g_list_prepend (priv->always_redraw_actors, actor);
+}
+
+void
+clutter_stage_remove_always_redraw_actor (ClutterStage          *stage,
+                                          ClutterActor          *actor)
+{
+  ClutterStagePrivate *priv;
+
+  g_return_if_fail (CLUTTER_IS_STAGE (stage));
+  g_return_if_fail (CLUTTER_IS_ACTOR (actor));
+
+  priv = stage->priv;
+
+  priv->always_redraw_actors = g_list_remove (priv->always_redraw_actors, actor);
+}
+
 static void
 read_pixels_to_file (char *filename_stem,
                      int   x,
@@ -1720,6 +1762,9 @@ clutter_stage_dispose (GObject *object)
   g_list_free_full (priv->pending_queue_redraws,
                     (GDestroyNotify) free_queue_redraw_entry);
   priv->pending_queue_redraws = NULL;
+
+  g_list_free (priv->always_redraw_actors);
+  priv->always_redraw_actors = NULL;
 
   /* this will release the reference on the stage */
   stage_manager = clutter_stage_manager_get_default ();
@@ -4049,6 +4094,16 @@ _clutter_stage_queue_redraw_entry_invalidate (ClutterStageQueueRedrawEntry *entr
 static void
 clutter_stage_maybe_finish_queue_redraws (ClutterStage *stage)
 {
+  /**
+   * add always_redraws
+   */
+  {
+    GList *l = stage->priv->always_redraw_actors;
+    for (; l; l = l->next) {
+        clutter_actor_queue_redraw(l->data);
+    }
+  }
+
   /* Note: we have to repeat until the pending_queue_redraws list is
    * empty because actors are allowed to queue redraws in response to
    * the queue-redraw signal. For example Clone actors or

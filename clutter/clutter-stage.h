@@ -229,7 +229,15 @@ guchar *        clutter_stage_read_pixels                       (ClutterStage   
 CLUTTER_AVAILABLE_IN_ALL
 void            clutter_stage_get_redraw_clip_bounds            (ClutterStage          *stage,
                                                                  cairo_rectangle_int_t *clip);
-
+CLUTTER_AVAILABLE_IN_ALL
+void            clutter_stage_add_always_redraw_clip            (ClutterStage          *stage,
+                                                                 cairo_rectangle_int_t *clip);
+CLUTTER_AVAILABLE_IN_ALL
+void            clutter_stage_add_always_redraw_actor           (ClutterStage          *stage,
+                                                                 ClutterActor          *actor);
+CLUTTER_AVAILABLE_IN_ALL
+void            clutter_stage_remove_always_redraw_actor        (ClutterStage          *stage,
+                                                                 ClutterActor          *actor);
 CLUTTER_AVAILABLE_IN_ALL
 void            clutter_stage_ensure_current                    (ClutterStage          *stage);
 CLUTTER_AVAILABLE_IN_ALL
